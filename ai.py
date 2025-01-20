@@ -165,6 +165,3 @@ def play_othello(ai):
 
     print("Game over")
     print(board)
-
-# 実行
-＃play_othello(KonekoAI())
