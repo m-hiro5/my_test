@@ -167,4 +167,4 @@ def play_othello(ai):
     print(board)
 
 # 実行
-play_othello(KonekoAI())
+＃play_othello(KonekoAI())
