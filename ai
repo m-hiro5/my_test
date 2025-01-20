@@ -1,0 +1,107 @@
+import math
+import random
+import copy
+
+class Node:
+    """モンテカルロ木探索用のノード"""
+    def __init__(self, board, player, parent=None):
+        self.board = board  # 現在の盤面
+        self.player = player  # 次のプレイヤー
+        self.parent = parent  # 親ノード
+        self.children = []  # 子ノードのリスト
+        self.visits = 0  # ノードの訪問回数
+        self.wins = 0  # 勝利数
+
+    def is_fully_expanded(self):
+        """全ての子ノードが展開済みかを確認"""
+        return len(self.children) == len(self.get_valid_moves(self.player))
+
+    def get_valid_moves(self, player):
+        """有効な手を取得（既存の関数を利用）"""
+        # 実装を既存コードに置き換える
+        pass
+
+    def make_move(self, move, player):
+        """指定された手を盤面に反映（既存の関数を利用）"""
+        # 実装を既存コードに置き換える
+        pass
+
+    def get_uct_value(self, child):
+        """UCTの値を計算"""
+        if child.visits == 0:
+            return float('inf')  # 未訪問ノードは最優先
+        return (child.wins / child.visits) + math.sqrt(2 * math.log(self.visits) / child.visits)
+
+    def select_child(self):
+        """UCT値に基づいて子ノードを選択"""
+        return max(self.children, key=self.get_uct_value)
+
+class MCTS:
+    def __init__(self, board, player, simulations=1000):
+        self.root = Node(board, player)
+        self.simulations = simulations
+
+    def select_node(self, node):
+        """選択ステップ"""
+        while not node.is_fully_expanded() and node.children:
+            node = node.select_child()
+        return node
+
+    def expand_node(self, node):
+        """展開ステップ"""
+        valid_moves = node.get_valid_moves(node.player)
+        for move in valid_moves:
+            temp_board = copy.deepcopy(node.board)
+            node.make_move(temp_board, move, node.player)
+            child_node = Node(temp_board, -node.player, parent=node)
+            node.children.append(child_node)
+
+    def simulate_game(self, node):
+        """シミュレーションステップ"""
+        current_board = copy.deepcopy(node.board)
+        current_player = node.player
+
+        while True:
+            valid_moves = node.get_valid_moves(current_player)
+            if not valid_moves:
+                opponent_moves = node.get_valid_moves(-current_player)
+                if not opponent_moves:
+                    break
+                current_player *= -1
+                continue
+
+            move = random.choice(valid_moves)
+            node.make_move(current_board, move, current_player)
+            current_player *= -1
+
+        black_score = sum(row.count(1) for row in current_board)
+        white_score = sum(row.count(-1) for row in current_board)
+        return 1 if black_score > white_score else -1 if black_score < white_score else 0
+
+    def backpropagate(self, node, result):
+        """バックプロパゲーション"""
+        while node:
+            node.visits += 1
+            node.wins += result
+            node = node.parent
+            result = -result  # プレイヤーが交代するので結果も反転
+
+    def best_move(self):
+        """モンテカルロ木探索で最善手を選択"""
+        for _ in range(self.simulations):
+            node = self.select_node(self.root)
+            if not node.is_fully_expanded():
+                self.expand_node(node)
+            child = random.choice(node.children)
+            result = self.simulate_game(child)
+            self.backpropagate(child, result)
+
+        best_child = max(self.root.children, key=lambda child: child.visits)
+        return best_child
+
+# 実行例
+board = [[0] * 8 for _ in range(8)]  # 初期盤面（仮）
+player = 1  # 黒の手番
+mcts = MCTS(board, player)
+best_move = mcts.best_move()
+print("Best move:", best_move)
